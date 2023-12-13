@@ -1,0 +1,29 @@
+{% extends 'baseadmin.html' %}
+
+{% block admincontent %}
+<a class="nav-link list-header" href="/admin/priority/add">Add priority</a>
+<form class="form-inline my-2 my-lg-0 float-right list-header" action="/admin/priority">
+  <input class="form-control mr-sm-2" name="q" type="search" placeholder="Search">
+  <button class="btn btn-default"><span class="fa fa-search"></span></button>
+</form>
+<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col fit">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+{% for priority in list %}
+<tr>
+    <td>{{priority.name}}</td>
+    <td class="fit">
+      <form method="POST" action="/admin/priority/{{priority.id}}/delete" class="form-inline">
+        <a href="/admin/priority/{{priority.id}}/edit"><i class="fa-regular fa-pen-to-square"></i></a>
+        <button type="submit" class="btn btn-link"><i class="fa-solid fa-trash-can"></i></button>
+      </form>
+    </td>
+</tr>
+{% endfor %}
+
+{% endblock %}

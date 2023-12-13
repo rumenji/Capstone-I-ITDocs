@@ -1,0 +1,86 @@
+{% extends 'basedesk.html' %}
+
+{% block deskcontent %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col">
+      <h6>{{ticket.title}}</h6>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <p>{{ticket.timestamp}}<p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <p>Status: {{ticket.status.name}}</p>
+    </div>
+    <div class="col">
+      <p>Priority: {{ticket.priority.name}}</p>
+    </div>
+    <div class="col">
+      <p>Type: {{ticket.type.name}}</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <p>Notes: {{ticket.notes}}</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <p>Contact: {{ticket.contact.first_name}}</p>
+    </div>
+    <div class="col">
+      <p>Assignee: {{ticket.user.first_name}}</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <p>Configuration: {{ticket.configuration.name}}</p>
+    </div>
+    <div class="col">
+      <p>Location: {{ticket.location.name}}</p>
+    </div>
+  </div>
+</div>
+<div class="container-fluid">
+  <a class="nav-link list-header" href="/desk/ticket/{{ticket.id}}/add-activity">New ticket activity</a>
+  <form method="POST" action="/desk/ticket/{{ticket.id}}/delete" class="list-header">
+    <a href="/desk/ticket/{{ticket.id}}/edit"><i class="fa-regular fa-pen-to-square"></i></a>
+    <button type="submit" class="btn btn-link"><i class="fa-solid fa-trash-can"></i></button>
+  </form>
+</div>
+<div class="container-fluid">
+<h5>Activities: <span class="badge badge-light">{{ticket.ticket_activities | length }}</span></h5>
+<h6>Total time spent: <span class="badge badge-light">{{ticket.ticket_activities | sum(attribute='time_spent') }}</span></h6>
+
+{% if ticket.ticket_activities %}
+  {% for activity in ticket.ticket_activities %}
+  <div class="row">
+    <div class="col">
+      <p>Notes: {{activity.notes}}</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <p>Time spent: {{activity.time_spent_new}}</p>
+    </div>
+    <div class="col">
+      <p>Assignee: {{activity.user.first_name}}</p>
+    </div>
+    <div class="col">
+      <form method="POST" action="/desk/ticket_activity/{{activity.id}}/delete" class="list-header">
+        <a href="/desk/ticket_activity/{{activity.id}}/edit"><i class="fa-regular fa-pen-to-square"></i></a>
+        <button type="submit" class="btn btn-link"><i class="fa-solid fa-trash-can"></i></button>
+      </form>
+    </div>
+  </div>
+  
+  {% endfor %}
+{% else %}
+<h6>No activity for this ticket yet.</h6>
+{% endif %}
+</div>
+{% endblock %}

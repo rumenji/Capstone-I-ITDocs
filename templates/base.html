@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>ITDocs</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <script src="https://unpkg.com/jquery"></script>
+  <script src="https://unpkg.com/popper"></script>
+  <script src="https://unpkg.com/bootstrap"></script>
+
+  <!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"> -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/stylesheets/style.css">
+  <link rel="shortcut icon" href="/static/favicon.ico">
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+  <!-- Top navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="/">
+      <img src="/static/images/Logo.png" width="30" height="30" alt="itdocslogo">
+      ITDoc
+    </a>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto" id="navigation">
+        {% if g.user %}
+        <li class="nav-item">
+          <a class="nav-link" href="/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/desk">Service desk</a>
+        </li>
+        {% if g.user.is_admin %}
+        <li class="nav-item">
+          <a class="nav-link" href="/admin">Settings</a>
+        </li>
+        {% endif %}
+        {% endif %}
+      </ul>
+    
+      <ul class="nav navbar-nav float-right navbar-right">
+        {% if not g.user %}
+        <li class="nav-item"><a class="nav-link" href="/login">Log in</a></li>
+        {% else %}
+        <li class="nav-item">
+          <a class="navbar-brand" href="/admin/users/{{ g.user.id }}">
+            <img src="{{ g.user.image_url }}" alt="{{ g.user.username }}" width="30" height="30">
+            <span>{{ g.user.first_name}}</span>
+          </a>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="/logout">Log out</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </nav>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, msg in messages %}
+  <div class="alert alert-{{category}}">{{ msg }}</div>
+  {% endfor %}
+  {% endif %}
+  {% endwith%}
+
+  {% block content %}
+  {% endblock %}
+
+
+  <script src="/static/app.js"></script>
+</body>
+
+</html>

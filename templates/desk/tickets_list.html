@@ -1,0 +1,41 @@
+{% extends 'basedesk.html' %}
+
+{% block deskcontent %}
+<a class="nav-link list-header" href="/desk/ticket/add">New ticket</a>
+<form class="form-inline my-2 my-lg-0 float-right list-header" action="/desk/ticket">
+  <input class="form-control mr-sm-2" name="q" type="search" placeholder="Search">
+  <button class="btn btn-default"><span class="fa fa-search"></span></button>
+</form>
+<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Title</th>
+        <th scope="col">Status</th>
+        <th scope="col">Priority</th>
+        <th scope="col">Assignee</th>
+        <th scope="col">Contact</th>
+        <th scope="col">Time</th>
+        <th scope="col fit">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+{% for ticket in list %}
+<tr>
+    <td><a href="/desk/ticket/{{ticket.id}}">{{ticket.id}}</a></td>
+    <td>{{ticket.title}}</td>
+    <td>{{ticket.status.name}}</td>
+    <td>{{ticket.priority.name}}</td>
+    <td>{{ticket.user.first_name}} {{ticket.user.last_name}}</td>
+    <td>{{ticket.contact.first_name}} {{ticket.contact.last_name}}</td>
+    <td>{{ticket.timestamp}}</td>
+    <td class="fit">
+      <form method="POST" action="/desk/ticket/{{ticket.id}}/delete" class="form-inline">
+        <a href="/desk/ticket/{{ticket.id}}/edit"><i class="fa-regular fa-pen-to-square"></i></a>
+        <button type="submit" class="btn btn-link"><i class="fa-solid fa-trash-can"></i></button>
+      </form>
+    </td>
+</tr>
+{% endfor %}
+
+{% endblock %}

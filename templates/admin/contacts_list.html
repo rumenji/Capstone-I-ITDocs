@@ -1,0 +1,33 @@
+{% extends 'baseadmin.html' %}
+
+{% block admincontent %}
+<a class="nav-link list-header" href="/admin/contact/add">Add new contact</a>
+<form class="form-inline my-2 my-lg-0 float-right list-header" action="/admin/contact">
+  <input class="form-control mr-sm-2" name="q" type="search" placeholder="Search">
+  <button class="btn btn-default"><span class="fa fa-search"></span></button>
+</form>
+<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">First name</th>
+        <th scope="col">Last name</th>
+        <th scope="col">Email</th>
+        <th scope="col fit">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+{% for entry in list %}
+<tr>
+    <td>{{entry.first_name}}</td>
+    <td>{{entry.last_name}}</td>
+    <td>{{entry.email}}</td>
+    <td class="fit">
+      <form method="POST" action="/admin/contacts/{{entry.id}}/delete" class="form-inline">
+        <a href="/admin/contacts/{{entry.id}}/edit"><i class="fa-regular fa-pen-to-square"></i></a>
+        <button type="submit" class="btn btn-link"><i class="fa-solid fa-trash-can"></i></button>
+      </form>
+    </td>
+</tr>
+{% endfor %}
+
+{% endblock %}

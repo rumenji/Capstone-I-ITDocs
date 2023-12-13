@@ -1,0 +1,17 @@
+.active-side {
+    font-weight: bold;
+}
+
+.table td.fit, 
+.table th.fit {
+    white-space: nowrap;
+    width: 1%;
+}
+
+.list-header {
+    display: inline-block;
+}
+
+.float-right {
+    float:right;
+}

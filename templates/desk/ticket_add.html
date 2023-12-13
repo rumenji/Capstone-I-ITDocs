@@ -1,0 +1,17 @@
+{% extends 'basedesk.html' %}
+
+{% block deskcontent %}
+
+<div class="row justify-content-md-center">
+  <div class="col-md-7 col-lg-5">
+    <h2 class="join-message">Create new ticket:</h2>
+    <form method="POST" id="location_form">
+      {% include "desk/_ticket_form.html" %}
+
+      <button class="btn btn-primary btn-lg btn-block">Create ticket</button>
+    </form>
+  
+  </div>
+</div>
+
+{% endblock %}

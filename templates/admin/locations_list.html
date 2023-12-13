@@ -1,0 +1,29 @@
+{% extends 'baseadmin.html' %}
+
+{% block admincontent %}
+<a class="nav-link list-header" href="/admin/location/add">Add location</a>
+<form class="form-inline my-2 my-lg-0 float-right list-header" action="/admin/location">
+  <input class="form-control mr-sm-2" name="q" type="search" placeholder="Search">
+  <button class="btn btn-default"><span class="fa fa-search"></span></button>
+</form>
+<table class="table table-hover">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col fit">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+{% for location in locations %}
+<tr>
+    <td>{{location.name}}</td>
+    <td class="fit">
+      <form method="POST" action="/admin/locations/{{location.id}}/delete" class="form-inline">
+        <a href="/admin/locations/{{location.id}}/edit"><i class="fa-regular fa-pen-to-square"></i></a>
+        <button type="submit" class="btn btn-link"><i class="fa-solid fa-trash-can"></i></button>
+      </form>
+    </td>
+</tr>
+{% endfor %}
+
+{% endblock %}

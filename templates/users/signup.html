@@ -1,0 +1,29 @@
+{% extends 'baseadmin.html' %}
+
+{% block body_class %}onboarding{% endblock %}
+
+{% block admincontent %}
+
+  <div class="row justify-content-md-center">
+  <div class="col-md-7 col-lg-5">
+    <h2 class="join-message">Create new user:</h2>
+    <form method="POST" id="user_form">
+      {{ form.hidden_tag() }}
+
+      {% for field in form if field.widget.input_type != 'hidden' %}
+      <div class="form-group">
+        {% for error in field.errors %}
+          <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+        {{field.label}}
+        {{ field(placeholder=field.label.text, class="form-control") }}
+      </div>
+      {% endfor %}
+
+      <button class="btn btn-primary btn-lg btn-block">Create user</button>
+    </form>
+  
+  </div>
+</div>
+
+{% endblock %}

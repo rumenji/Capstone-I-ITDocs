@@ -1,0 +1,29 @@
+{% extends 'baseadmin.html' %}
+
+{% block admincontent %}
+<a class="nav-link list-header" href="/admin/ticket_type/add">Add ticket type</a>
+<form class="form-inline my-2 my-lg-0 float-right list-header" action="/admin/ticket_type">
+  <input class="form-control mr-sm-2" name="q" type="search" placeholder="Search">
+  <button class="btn btn-default"><span class="fa fa-search"></span></button>
+</form>
+<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col fit">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+{% for type in list %}
+<tr>
+    <td>{{type.name}}</td>
+    <td class="fit">
+      <form method="POST" action="/admin/ticket_type/{{type.id}}/delete" class="form-inline">
+        <a href="/admin/ticket_type/{{type.id}}/edit"><i class="fa-regular fa-pen-to-square"></i></a>
+        <button type="submit" class="btn btn-link"><i class="fa-solid fa-trash-can"></i></button>
+      </form>
+    </td>
+</tr>
+{% endfor %}
+
+{% endblock %}
