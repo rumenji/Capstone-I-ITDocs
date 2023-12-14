@@ -44,8 +44,7 @@ External API will be used to send email notifications to clients, and a copy to 
 
 ### Database Schema
 
-Entity Relationship Diagram:
-
+[Entity Relationship Diagram](InitialProjectRequirements/DatabaseDiagram.jpeg)
 
 - DB design assumptions:
 
@@ -106,8 +105,8 @@ MORE THAN CRUD FEATURES
 
 Reference to the project board and issues:
 
-- Project Board: [https://github.com/rumenji/Capstone1Personal/projects?query=is%3Aopen](https://github.com/rumenji/Capstone1Personal/projects?query=is%3Aopen)
-- List of Issues: [https://github.com/rumenji/Capstone1Personal/issues](https://github.com/rumenji/Capstone1Personal/issues)
+[Project Board][https://github.com/rumenji/Capstone1Personal/projects?query=is%3Aopen](https://github.com/rumenji/Capstone1Personal/projects?query=is%3Aopen)
+[List of Issues][https://github.com/rumenji/Capstone1Personal/issues](https://github.com/rumenji/Capstone1Personal/issues)
 
 **New issue checklist:**
 
@@ -130,7 +129,7 @@ Reference to the project board and issues:
 ## User Flow Diagram
 
 
-User Flow Diagram:
+[User Flow Diagram](InitialProjectRequirements/Cap1UserFlow.png)
 
 
 
