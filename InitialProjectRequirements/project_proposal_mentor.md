@@ -44,7 +44,7 @@ External API will be used to send email notifications to clients, and a copy to 
 
 ### Database Schema
 
-[Entity Relationship Diagram](InitialProjectRequirements/DatabaseDiagram.jpeg)
+[Entity Relationship Diagram](DatabaseDiagram.jpeg)
 
 - DB design assumptions:
 
@@ -129,7 +129,7 @@ Reference to the project board and issues:
 ## User Flow Diagram
 
 
-[User Flow Diagram](InitialProjectRequirements/Cap1UserFlow.png)
+[User Flow Diagram](Cap1UserFlow.png)
 
 
 
