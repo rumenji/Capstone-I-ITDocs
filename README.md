@@ -4,14 +4,14 @@ This project is about creating a web application that allows help desk users to 
 The app also has metrics that will be displayed on the dashboard homepage.
 
 
-[Image Title](/AppScreenshot.png)
+[App Screenshot](/AppScreenshot.png)
 
 
 ## Get Started
 
 ### Prerequisites
 
-[Requirements](/../requirements.txt)
+[Requirements](/requirements.txt)
 
   - Python 3.12
   - Pip
@@ -43,7 +43,7 @@ The app also has metrics that will be displayed on the dashboard homepage.
 
 ### Project Proposal
 
-- [Project propsal](/project_proposal_mentor.md)
+- [Project propsal](/InitialProjectRequirements/project_proposal_mentor.md)
 
 ### Project Management
 
