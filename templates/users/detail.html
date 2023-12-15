@@ -9,8 +9,8 @@
 <p>Email address: {{user.email}}</p>
 <p>Has Admin Permissions: {% if user.is_admin %} Yes {% else %} No {% endif %}</p>
 <div class="ml-auto">
-<a href="/users/{{user.id}}/edit" class="btn btn-outline-secondary">Edit User</a>
-            <form method="POST" action="/users/{{user.id}}/delete" class="form-inline">
+<a href="/admin/users/{{user.id}}/edit" class="btn btn-outline-secondary">Edit User</a>
+            <form method="POST" action="/admin/users/{{user.id}}/delete" class="form-inline">
               <button class="btn btn-outline-danger ml-2">Delete User</button>
             </form>
 </div>

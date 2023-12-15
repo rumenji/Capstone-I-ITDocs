@@ -999,6 +999,24 @@ def tickets_list():
     return render_template('/desk/tickets_list.html', list=tickets)
 
 
+@app.route('/desk/my_ticket')
+def my_tickets_list():
+    """Page with listing of logged in user's tickets.
+    """
+    if not g.user:
+        flash("Login first.", "danger")
+        return redirect("/login")
+    
+    search = request.args.get('q')
+
+    if not search:
+        tickets = Ticket.query.filter_by(user_id=g.user.id).all()
+    else:
+        tickets = Ticket.query.filter(Ticket.title.ilike(f"%{search}%")).all()
+
+    return render_template('/desk/tickets_list.html', list=tickets)
+
+
 @app.route('/desk/ticket/add', methods=["GET", "POST"])
 def ticket_add():
     """Add new ticket
@@ -1014,8 +1032,6 @@ def ticket_add():
     form.contact_id.choices = [(x.id, x.first_name) for x in contact_choices]
     user_choices = (db.session.query(User.id, User.first_name).all())
     form.user_id.choices = [(x.id, x.first_name) for x in user_choices]
-    location_choices = (db.session.query(Location.id, Location.name).all())
-    form.location_id.choices = [(x.id, x.name) for x in location_choices]
     status_choices = (db.session.query(Ticket_status.id, Ticket_status.name).all())
     form.status_id.choices = [(x.id, x.name) for x in status_choices]
     priority_choices = (db.session.query(Ticket_priority.id, Ticket_priority.name).all())
@@ -1031,7 +1047,6 @@ def ticket_add():
             notes=form.notes.data,
             status_id=form.status_id.data,
             priority_id=form.priority_id.data,
-            location_id=form.location_id.data,
             type_id=form.type_id.data,
             contact_id=form.contact_id.data,
             user_id=form.user_id.data,
@@ -1084,8 +1099,6 @@ def ticket_edit(ticket_id):
     form.contact_id.choices = [(x.id, x.first_name) for x in contact_choices]
     user_choices = (db.session.query(User.id, User.first_name).all())
     form.user_id.choices = [(x.id, x.first_name) for x in user_choices]
-    location_choices = (db.session.query(Location.id, Location.name).all())
-    form.location_id.choices = [(x.id, x.name) for x in location_choices]
     status_choices = (db.session.query(Ticket_status.id, Ticket_status.name).all())
     form.status_id.choices = [(x.id, x.name) for x in status_choices]
     priority_choices = (db.session.query(Ticket_priority.id, Ticket_priority.name).all())
@@ -1100,7 +1113,6 @@ def ticket_edit(ticket_id):
         ticket.notes=form.notes.data,
         ticket.status_id=form.status_id.data,
         ticket.priority_id=form.priority_id.data,
-        ticket.location_id=form.location_id.data,
         ticket.type_id=form.type_id.data,
         ticket.contact_id=form.contact_id.data,
         ticket.user_id=form.user_id.data,

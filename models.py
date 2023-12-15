@@ -222,19 +222,22 @@ class Ticket(db.Model):
     status_id = db.Column(db.Integer, db.ForeignKey('ticket_statuses.id', ondelete='SET NULL'))
     priority_id = db.Column(db.Integer, db.ForeignKey('ticket_priorities.id', ondelete='SET NULL'))
     type_id = db.Column(db.Integer, db.ForeignKey('ticket_types.id', ondelete='SET NULL'))
-    location_id = db.Column(db.Integer, db.ForeignKey('locations.id', ondelete='SET NULL'))
     contact_id = db.Column(db.Integer, db.ForeignKey('contacts.id', ondelete='SET NULL'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     configuration_id = db.Column(db.Integer, db.ForeignKey('configurations.id', ondelete='SET NULL'))
 
     status = db.relationship('Ticket_status')
-    location = db.relationship('Location')
     contact = db.relationship('Contact')
     user = db.relationship('User')
     type = db.relationship('Ticket_type')
     priority = db.relationship('Ticket_priority')
     configuration = db.relationship('Configuration')
     ticket_activities = db.relationship('Ticket_activity', cascade="all, delete-orphan")
+
+    @property
+    def friendly_date(self):
+
+        return self.timestamp.strftime("%b %-d  %Y, %-I:%M %p")
 
 class Ticket_activity(db.Model):
     __tablename__ = "ticket_activities"
@@ -252,6 +255,11 @@ class Ticket_activity(db.Model):
     
     ticket = db.relationship('Ticket')
     user = db.relationship('User')
+
+    @property
+    def friendly_date(self):
+
+        return self.timestamp.strftime("%b %-d  %Y, %-I:%M %p")
 
 
 

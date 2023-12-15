@@ -77,7 +77,6 @@ class TicketForm(FlaskForm):
     user_id = SelectField('Assignee', coerce=int, validators=[DataRequired()])
     contact_id = SelectField('Contact*', coerce=int, validators=[DataRequired()])
     configuration_id = SelectField('Configuration', coerce=int, validators=[DataRequired()])
-    location_id = SelectField('Location', coerce=int, validators=[DataRequired()])
 
 class TicketActivityForm(FlaskForm):
 
