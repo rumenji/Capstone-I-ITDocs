@@ -9,7 +9,7 @@
   </div>
   <div class="row">
     <div class="col">
-      <p>{{ticket.timestamp}}<p>
+      <p>{{ticket.friendly_date}}<p>
     </div>
   </div>
   <div class="row">
@@ -65,10 +65,13 @@
   </div>
   <div class="row">
     <div class="col">
-      <p>Time spent: {{activity.time_spent_new}}</p>
+      <p>Time spent: {{activity.time_spent}}</p>
     </div>
     <div class="col">
       <p>Assignee: {{activity.user.first_name}}</p>
+    </div>
+    <div class="col">
+      <p>Timestamp: {{activity.friendly_date}}</p>
     </div>
     <div class="col">
       <form method="POST" action="/desk/ticket_activity/{{activity.id}}/delete" class="list-header">

@@ -16,9 +16,11 @@ There'll be two users type:
 - Admin
   - Admin can create, update, and delete setting types, like ticket priority, status, and type; configurations status, and configurations.
   - Admin can create, update, and delete users.
+  - Admin can perfomr all regular user tasks.
 - Regular users
   - Regular users can create, update, and log activites for tickets.
   - Regular users can view tickets created by other users.
+  - Regular user can view and create contacts.
   - Regular users can view the dashboard.
 
 ## Data / API Information
@@ -77,6 +79,7 @@ MUST-HAVE
 | Send email notifications at ticket creation | 2 hrs | 1 hr |
 | Add ticket activities to each ticket | 5 hrs | 3.5 hrs |
 | Add time spent to each activity and a total for the ticket | 2 hrs | 1.75 hrs |
+| View/Add/Edit contacts list | 1 hr | 1 hr|
 | Two user types - admin and standard | 2 hrs | 1.5 hrs |
 | Settings menu for admins | 10 hrs | 11 hrs |
 | Dashboard with metrics | 10 hours | 14 hrs |

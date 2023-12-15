@@ -28,7 +28,7 @@
     <td>{{ticket.priority.name}}</td>
     <td>{{ticket.user.first_name}} {{ticket.user.last_name}}</td>
     <td>{{ticket.contact.first_name}} {{ticket.contact.last_name}}</td>
-    <td>{{ticket.timestamp}}</td>
+    <td>{{ticket.friendly_date}}</td>
     <td class="fit">
       <form method="POST" action="/desk/ticket/{{ticket.id}}/delete" class="form-inline">
         <a href="/desk/ticket/{{ticket.id}}/edit"><i class="fa-regular fa-pen-to-square"></i></a>
