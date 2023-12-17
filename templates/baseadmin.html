@@ -11,21 +11,21 @@
         </a>
         <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="side-navigation">
           <li class="mb-1">
-            <button class="btn btn-toggle btn-link align-items-center rounded" data-bs-toggle="collapse"
+            <button class="btn btn-toggle btn-link align-items-center  text-dark rounded" data-bs-toggle="collapse"
                 data-bs-target="#orders-collapse" aria-expanded="false">
                 Settings
             </button>
             <div class="collapse.show">
                 <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                    <li><a href="/admin/contact" class="link-dark rounded">Contacts</a></li>
+                    <li><a href="/admin/contact" class="link-dark rounded text-dark">Contacts</a></li>
                   {% if g.user.is_admin %}
-                    <li class="active_side"><a href="/admin/location" class="link-dark rounded">Locations</a></li>
-                    <li><a href="/admin/users" class="link-dark rounded">Users</a></li>
-                    <li><a href="/admin/priority" class="link-dark rounded">Ticket Priority</a></li>
-                    <li><a href="/admin/ticket_status" class="link-dark rounded">Ticket Status</a></li>
-                    <li><a href="/admin/ticket_type" class="link-dark rounded">Ticket Type</a></li>
-                    <li><a href="/admin/configuration" class="link-dark rounded">Configurations</a></li>
-                    <li><a href="/admin/conf_status" class="link-dark rounded">Configuration Status</a></li>
+                    <li class="active_side"><a href="/admin/location" class="link-dark rounded text-dark">Locations</a></li>
+                    <li><a href="/admin/users" class="link-dark rounded text-dark">Users</a></li>
+                    <li><a href="/admin/priority" class="link-dark rounded text-dark">Ticket Priority</a></li>
+                    <li><a href="/admin/ticket_status" class="link-dark rounded text-dark">Ticket Status</a></li>
+                    <li><a href="/admin/ticket_type" class="link-dark rounded text-dark">Ticket Type</a></li>
+                    <li><a href="/admin/configuration" class="link-dark rounded text-dark">Configurations</a></li>
+                    <li><a href="/admin/conf_status" class="link-dark rounded text-dark">Configuration Status</a></li>
                   {% endif %}
                     
                 </ul>

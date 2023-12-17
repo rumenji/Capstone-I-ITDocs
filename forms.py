@@ -58,6 +58,7 @@ class ConfigurationForm(FlaskForm):
 class TicketStatusForm(FlaskForm):
 
     name = StringField('Name*', validators=[DataRequired()])
+    is_closed = BooleanField('Marks ticket as closed')
 
 class TicketPriorityForm(FlaskForm):
 

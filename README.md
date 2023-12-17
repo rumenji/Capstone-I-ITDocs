@@ -4,7 +4,7 @@ This project is about creating a web application that allows help desk users to 
 The app also has metrics that will be displayed on the dashboard homepage.
 
 
-[App Screenshot](/InitialProjectRequirements/AppScreenshot.png)
+[App Screenshot](/Documentation/AppScreenshot.png)
 
 
 ## Get Started
@@ -43,7 +43,7 @@ The app also has metrics that will be displayed on the dashboard homepage.
 
 ### Project Proposal
 
-- [Project propsal](/InitialProjectRequirements/project_proposal_mentor.md)
+- [Project propsal](/Documentation/project_proposal_mentor.md)
 
 ### Project Management
 
