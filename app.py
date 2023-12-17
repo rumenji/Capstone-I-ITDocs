@@ -1,6 +1,7 @@
 import os
+from datetime import time, datetime
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 
@@ -11,7 +12,7 @@ from email_api import send_mail
 CURR_USER_KEY = "curr_user"
 
 app = Flask(__name__)
-
+app.debug=True
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
@@ -92,6 +93,7 @@ def signup():
                 last_name = form.last_name.data,
                 email=form.email.data,
                 image_url=form.image_url.data or User.image_url.default.arg,
+                is_admin = form.is_admin.data
             )
             db.session.commit()
 
@@ -238,7 +240,7 @@ def homepage():
         flash("Login first.", "danger")
         return redirect("/login")
     
-    return render_template('home.html')
+    return redirect('/desk')
 
 
 @app.route('/admin')
@@ -254,10 +256,12 @@ def homepage_docs():
 
 
 @app.route('/desk')
-def homepage_desk():
+def desk_dashboard():
+    """Show desk dashboard"""
     if not g.user:
         flash("Login first.", "danger")
         return redirect("/")
+    
     return render_template('/desk/home_desk.html')
 
 ##########################################################
@@ -499,7 +503,8 @@ def ticket_status_add():
     if form.validate_on_submit():
         try:
             ticket_status = Ticket_status(
-                name=form.name.data
+                name=form.name.data,
+                is_closed=form.is_closed.data
             )
             db.session.add(ticket_status)
             db.session.commit()
@@ -531,7 +536,7 @@ def ticket_status_edit(ticket_status_id):
     if form.validate_on_submit():
         try:
             ticket_status.name = form.name.data
-            
+            ticket_status.is_closed = form.is_closed.data
             db.session.commit()
             return redirect('/admin/ticket_status')
         except IntegrityError:
@@ -1227,3 +1232,21 @@ def ticket_activity_delete(activity_id):
     db.session.commit()
 
     return redirect(f"/desk/ticket/{ticket_activity.ticket.id}")
+
+
+###############################################################
+# Get chart statistics routes
+@app.route('/desk/stats')
+def ticket_stats():
+    """Get open/closed tickets by user to plot the chart"""
+    if not g.user:
+        flash("Login first.", "danger")
+        return redirect("/login")
+    if g.user.is_admin:
+        first_current = datetime.replace(datetime.now(), month=1, day=1)
+        ytd = datetime.combine(first_current, time.min)
+
+        tickets = Ticket.query.filter(Ticket.timestamp <= datetime.now()).filter(Ticket.timestamp >= ytd).all()
+
+        data = [ticket.serialize() for ticket in tickets]
+        return jsonify(data)

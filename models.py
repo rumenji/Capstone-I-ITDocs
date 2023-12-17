@@ -64,6 +64,9 @@ class User(db.Model):
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
 
+    @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'
 
     @classmethod
     def signup(cls, username, first_name, last_name, email, password, image_url):
@@ -186,6 +189,7 @@ class Ticket_status(db.Model):
         db.Text,
         nullable = False
     )
+    is_closed = db.Column(db.Boolean, nullable=False, default=False)
 
 class Ticket_type(db.Model):
     __tablename__ = "ticket_types"
@@ -217,7 +221,7 @@ class Ticket(db.Model):
     timestamp = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow(),
+        default=datetime.now(),
     )
     status_id = db.Column(db.Integer, db.ForeignKey('ticket_statuses.id', ondelete='SET NULL'))
     priority_id = db.Column(db.Integer, db.ForeignKey('ticket_priorities.id', ondelete='SET NULL'))
@@ -238,6 +242,14 @@ class Ticket(db.Model):
     def friendly_date(self):
 
         return self.timestamp.strftime("%b %-d  %Y, %-I:%M %p")
+    
+    def serialize(self):
+        return {
+            'id': self.id,
+            'status': self.status.is_closed,
+            'user': self.user.full_name,
+            'timestamp': self.timestamp
+        }
 
 class Ticket_activity(db.Model):
     __tablename__ = "ticket_activities"

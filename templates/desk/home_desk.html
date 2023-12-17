@@ -1,4 +1,126 @@
 {% extends 'basedesk.html' %}
 {% block deskcontent %}
-  <h1>Home desk</h1>
+<div class="container-fluid">
+
+  <!-- Page Heading -->
+  <div class="d-sm-flex mb-4">
+      <h1 class="h3 mb-0 text-gray-800">Dashboard for {{g.user.username}}</h1>
+  </div>
+
+  <!-- Content Row -->
+  <div class="row">
+
+      <!-- Tickets today -->
+      <div class="col-xl-3 col-md-6 mb-4">
+          <div class="card border-left-primary">
+              <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                          <div class="text-xs font-weight-bold mb-1">
+                              Tickets (Today)</div>
+                          <div id="tickets_today" class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+       <!-- Tickets this month -->
+       <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold mb-1">
+                            Tickets (This month)</div>
+                        <div id="tickets_mtd" class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Tickets this year -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary">
+          <div class="card-body">
+              <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                      <div class="text-xs font-weight-bold mb-1">
+                          Tickets (This year)</div>
+                      <div id="tickets_ytd" class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+    </div>
+    <!-- Tickets open -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary">
+          <div class="card-body">
+              <div class="row no-gutters align-items-center">
+                  <div class="col mr-2">
+                      <div class="text-xs font-weight-bold mb-1">
+                          Tickets (Open)</div>
+                      <div id="tickets_open" class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+  
+</div>
+<div class="row">
+
+  <!-- Ticket Volume YTD -->
+  <div class="col-xl-8 col-lg-7">
+      <div class="card shadow mb-4">
+          <div
+              class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+              <h6 class="m-0 font-weight-bold">Ticket Volume</h6>
+          </div>
+          <div class="card-body">
+              <div class="chart-area">
+                  <canvas id="ticketVolumeChart"></canvas>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <!-- Ticket Status Today -->
+  <div class="col-xl-4 col-lg-5">
+      <div class="card shadow mb-4">
+          <div
+              class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+              <h6 class="m-0 font-weight-bold">Tickets by status</h6>
+          </div>
+          <div class="card-body">
+            <div class="chart-area">
+              <canvas id="ticketByStatusChart"></canvas>
+          </div>
+          </div>
+      </div>
+  </div>
+</div>
+
+{% if g.user.is_admin %}
+<div class="row">
+
+  <!-- Ticket by User YTD -->
+  <div class="col-xl-8 col-lg-7">
+      <div class="card shadow mb-4">
+          <div
+              class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+              <h6 class="m-0 font-weight-bold">Tickets by assignee</h6>
+          </div>
+          <div class="card-body">
+              <div class="chart-area">
+                  <canvas id="ticketAssigneeChart"></canvas>
+              </div>
+          </div>
+      </div>
+  </div>
+  {% endif %}   
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"
+  integrity="sha256-T/f7Sju1ZfNNfBh7skWn0idlCBcI3RwdLSS4/I7NQKQ=" crossorigin="anonymous"></script>
+<script src="/static/charts.js"></script>
 {% endblock %}
