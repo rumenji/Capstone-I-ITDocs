@@ -141,6 +141,10 @@ class Contact(db.Model):
         unique=True,
     )
 
+    @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'
+
     notes = db.Column(db.Text)
 
     location_id = db.Column(db.Integer, db.ForeignKey('locations.id', ondelete='SET NULL'))
@@ -231,11 +235,11 @@ class Ticket(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     configuration_id = db.Column(db.Integer, db.ForeignKey('configurations.id', ondelete='SET NULL'))
 
-    status = db.relationship('Ticket_status')
+    status = db.relationship('Ticket_status', backref="tickets")
     contact = db.relationship('Contact')
     user = db.relationship('User')
     type = db.relationship('Ticket_type')
-    priority = db.relationship('Ticket_priority')
+    priority = db.relationship('Ticket_priority', backref="tickets")
     configuration = db.relationship('Configuration')
     ticket_activities = db.relationship('Ticket_activity', cascade="all, delete-orphan")
 
