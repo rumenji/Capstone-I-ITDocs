@@ -227,6 +227,7 @@ class Ticket(db.Model):
         nullable=False,
         default=datetime.now(),
     )
+    notification_sent = db.Column(db.Boolean, default=True)
     status_id = db.Column(db.Integer, db.ForeignKey('ticket_statuses.id', ondelete='SET NULL'))
     priority_id = db.Column(db.Integer, db.ForeignKey('ticket_priorities.id', ondelete='SET NULL'))
     type_id = db.Column(db.Integer, db.ForeignKey('ticket_types.id', ondelete='SET NULL'))
@@ -265,6 +266,7 @@ class Ticket_activity(db.Model):
         nullable=False,
         default=datetime.utcnow(),
     )
+    notification_sent = db.Column(db.Boolean, default=True)
     time_spent = db.Column(db.Numeric(precision = 10, scale = 2), nullable = False)
     ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id', ondelete='CASCADE'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
