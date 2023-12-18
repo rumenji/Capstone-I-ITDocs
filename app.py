@@ -7,7 +7,7 @@ from sqlalchemy import or_
 
 from forms import UserForm, LoginForm, LocationForm, ContactForm, ConfStatusForm, ConfigurationForm, TicketStatusForm, TicketPriorityForm, TicketTypeForm, TicketForm, TicketActivityForm
 from models import db, connect_db, User, Location, Contact, Conf_status, Configuration, Ticket_status, Ticket_type, Ticket_priority, Ticket, Ticket_activity
-from email_api import send_mail
+from email_api import send_mail_ticket, send_mail_activity
 
 CURR_USER_KEY = "curr_user"
 
@@ -1063,11 +1063,13 @@ def ticket_add():
         flash("Ticket successfully created", "success")
 
         #Send email to assignee and contact
-        send_code = send_mail(ticket)
+        send_code = send_mail_ticket(ticket)
         
         if send_code == 200:
             msg="info"
-        else: 
+        else:
+            ticket.notification_sent = False
+            db.session.commit()
             msg="warning"
         flash(f"Email was sent with code: {send_code}", msg)
 
@@ -1123,6 +1125,18 @@ def ticket_edit(ticket_id):
         ticket.user_id=form.user_id.data,
         ticket.configuration_id=form.configuration_id.data
         db.session.commit()
+
+        #Send email to assignee and contact
+        send_code = send_mail_ticket(ticket)
+        
+        if send_code == 200:
+            msg="info"
+        else:
+            ticket.notification_sent = False
+            db.session.commit()
+            msg="warning"
+        flash(f"Email was sent with code: {send_code}", msg)
+
         return redirect(f'/desk/ticket/{ticket.id}')
     
     return render_template("/desk/ticket_edit.html", form=form)
@@ -1142,8 +1156,24 @@ def ticket_delete(ticket_id):
     ticket = Ticket.query.get_or_404(ticket_id)
     db.session.delete(ticket)
     db.session.commit()
-
+    
     return redirect("/desk/ticket")
+
+
+@app.route('/desk/resend/<int:ticket_id>')
+def resend_notification(ticket_id):
+    ticket = Ticket.query.get_or_404(ticket_id)
+    send_code = send_mail_ticket(ticket)
+        
+    if send_code == 200:
+        msg="info"
+    else:
+        ticket.notification_sent = False
+        db.session.commit()
+        msg="warning"
+    flash(f"Email was sent with code: {send_code}", msg)
+
+    return redirect(f'/desk/ticket/{ticket.id}')
 
 
 ##########################################################
@@ -1176,8 +1206,16 @@ def ticket_activity_add(ticket_id):
         db.session.add(ticket_activity)
         db.session.commit()
         
-
-
+        #Send email to assignee and contact
+        send_code = send_mail_activity(ticket_activity)
+        
+        if send_code == 200:
+            msg="info"
+        else:
+            ticket_activity.notification_sent = False
+            db.session.commit()
+            msg="warning"
+        flash(f"Email was sent with code: {send_code}", msg)
 
         return redirect(f"/desk/ticket/{ticket_id}")
 
@@ -1208,6 +1246,16 @@ def ticket_activity_edit(activity_id):
         
         db.session.commit()
 
+        #Send email to assignee and contact
+        send_code = send_mail_activity(ticket_activity)
+        
+        if send_code == 200:
+            msg="info"
+        else:
+            ticket_activity.notification_sent = False
+            db.session.commit()
+            msg="warning"
+        flash(f"Email was sent with code: {send_code}", msg)
 
         return redirect(f"/desk/ticket/{ticket_activity.ticket.id}")
 
@@ -1233,6 +1281,20 @@ def ticket_activity_delete(activity_id):
 
     return redirect(f"/desk/ticket/{ticket_activity.ticket.id}")
 
+@app.route('/desk/resend-activity/<int:activity_id>')
+def resend_activity_notification(activity_id):
+    activity = Ticket_activity.query.get_or_404(activity_id)
+    send_code = send_mail_activity(activity)
+        
+    if send_code == 200:
+        msg="info"
+    else:
+        activity.notification_sent = False
+        db.session.commit()
+        msg="warning"
+    flash(f"Email was sent with code: {send_code}", msg)
+
+    return redirect(f'/desk/ticket/{activity.ticket.id}')
 
 ###############################################################
 # Get chart statistics routes
