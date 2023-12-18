@@ -8,6 +8,7 @@ from sqlalchemy import or_
 from forms import UserForm, LoginForm, LocationForm, ContactForm, ConfStatusForm, ConfigurationForm, TicketStatusForm, TicketPriorityForm, TicketTypeForm, TicketForm, TicketActivityForm
 from models import db, connect_db, User, Location, Contact, Conf_status, Configuration, Ticket_status, Ticket_type, Ticket_priority, Ticket, Ticket_activity
 from email_api import send_mail
+from date_convert import from_time, to_time
 
 CURR_USER_KEY = "curr_user"
 
@@ -994,12 +995,16 @@ def tickets_list():
         flash("Login first.", "danger")
         return redirect("/login")
     
-    search = request.args.get('q')
+    search_from = request.args.get('from')
+    search_to = request.args.get('to')
 
-    if not search:
-        tickets = Ticket.query.all()
+    if search_from and search_to:
+        fromdatetime = from_time(search_from)
+        todatetime = to_time(search_to)
+        tickets = db.session.query(Ticket).filter((Ticket.timestamp.between(fromdatetime, todatetime))).all()
     else:
-        tickets = Ticket.query.filter(Ticket.title.ilike(f"%{search}%")).all()
+        tickets = Ticket.query.all()
+       
 
     return render_template('/desk/tickets_list.html', list=tickets)
 
@@ -1012,14 +1017,18 @@ def my_tickets_list():
         flash("Login first.", "danger")
         return redirect("/login")
     
-    search = request.args.get('q')
+    search_from = request.args.get('from')
+    search_to = request.args.get('to')
 
-    if not search:
-        tickets = Ticket.query.filter_by(user_id=g.user.id).all()
+    if search_from and search_to:
+        fromdatetime = from_time(search_from)
+        todatetime = to_time(search_to)
+        tickets = db.session.query(Ticket).filter_by(user_id=g.user.id).filter((Ticket.timestamp.between(fromdatetime, todatetime))).all()
     else:
-        tickets = Ticket.query.filter(Ticket.title.ilike(f"%{search}%")).all()
+        tickets = Ticket.query.filter_by(user_id=g.user.id).all()
 
-    return render_template('/desk/tickets_list.html', list=tickets)
+
+    return render_template('/desk/tickets_list_my.html', list=tickets)
 
 
 @app.route('/desk/ticket/add', methods=["GET", "POST"])
