@@ -1,19 +1,19 @@
+<!-- Generic admin edit form template -->
 {% extends 'baseadmin.html' %}
 
-{% block admincontent %}
+{% block content %}
+<div class="row">
+  <div class="col-md-9 col-lg-6">
+    <h2 class="join-message">Edit {{config}}:</h2>
+    <form method="POST" id="location_form">
+      <!-- Uses the general form template -->
+      {% include "admin/_admin_form.html" %}
 
-  <div class="row justify-content-md-center">
-    <div class="col-md-4">
-      <h2 class="join-message">Edit {{config}}:</h2>
-      <form method="POST" id="location_form">
-        {% include "admin/_admin_form.html" %}
-
-        <div class="edit-btn-area">
-          <button class="btn btn-success">Edit this {{config}}</button>
-          <a href="/admin/{{config}}" class="btn btn-outline-secondary">Cancel</a>
-        </div>
-      </form>
-    </div>
+      <div class="edit-btn-area">
+        <button class="btn btn-sm btn-success">Edit this {{config}}</button>
+        <button id="back" class="btn btn-sm btn-outline-secondary">Cancel</button>
+      </div>
+    </form>
   </div>
-
+</div>
 {% endblock %}

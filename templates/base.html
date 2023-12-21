@@ -1,3 +1,4 @@
+<!-- Base template - includes blocks for different side bar navigations and general content -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -36,7 +37,7 @@
         {% endif %}
         {% endif %}
       </ul>
-    
+
       <ul class="nav navbar-nav float-right navbar-right">
         {% if not g.user %}
         <li class="nav-item"><a class="nav-link" href="/login">Log in</a></li>
@@ -60,10 +61,28 @@
   {% endif %}
   {% endwith%}
 
-  {% block content %}
-  {% endblock %}
+  <!-- Side bar navigation -->
+  <div class="container-fluid">
+    <div class="row flex-nowrap">
+      <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-light">
+        <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100">
+          <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start"
+            id="side-navigation">
+            {% block sidebar %}
+            <!-- Side bar navigation here -->
+            {% endblock %}
+          </ul>
+          <hr>
+        </div>
+      </div>
+      <div class="col py-3 border-left">
+        {% block content %}
+        <!-- Page content here -->
+        {% endblock %}
 
-
+      </div>
+    </div>
+  </div>
   <script src="/static/app.js"></script>
 </body>
 

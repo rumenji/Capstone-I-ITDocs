@@ -1,44 +1,31 @@
 {% extends 'base.html' %}
-{% block content %}
-<!-- Side bar navigation -->
-<div class="container-fluid">
-  <div class="row flex-nowrap">
-    <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-light">
-      <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100">
-        <a href="/admin" class="d-flex align-items-center pb-3 mb-3 link-dark text-decoration-none border-bottom">
-          <svg class="bi me-2" width="30" height="24"><use xlink:href="#bootstrap"></use></svg>
-          <span class="fs-5 fw-semibold"></span>
-        </a>
-        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="side-navigation">
-          <li class="mb-1">
-            <button class="btn btn-toggle btn-link align-items-center  text-dark rounded" data-bs-toggle="collapse"
-                data-bs-target="#orders-collapse" aria-expanded="false">
-                Settings
-            </button>
-            <div class="collapse.show">
-                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                    <li><a href="/admin/contact" class="link-dark rounded text-dark">Contacts</a></li>
-                  {% if g.user.is_admin %}
-                    <li class="active_side"><a href="/admin/location" class="link-dark rounded text-dark">Locations</a></li>
-                    <li><a href="/admin/users" class="link-dark rounded text-dark">Users</a></li>
-                    <li><a href="/admin/priority" class="link-dark rounded text-dark">Ticket Priority</a></li>
-                    <li><a href="/admin/ticket_status" class="link-dark rounded text-dark">Ticket Status</a></li>
-                    <li><a href="/admin/ticket_type" class="link-dark rounded text-dark">Ticket Type</a></li>
-                    <li><a href="/admin/configuration" class="link-dark rounded text-dark">Configurations</a></li>
-                    <li><a href="/admin/conf_status" class="link-dark rounded text-dark">Configuration Status</a></li>
-                  {% endif %}
-                    
-                </ul>
-            </div>
-          </li>
-        </ul>
-        <hr>
-      </div>
-    </div>
-    <div class="col py-3 border-left">
-      {% block admincontent %}
-      {% endblock %}
-    </div>
-  </div>
-</div>
+{% block sidebar %}
+<!-- Side bar navigation for admin templates. Extends the base.html-->
+
+<li><a href="/admin/contact" class="nav-link px-0 align-middle"><i
+      class="fa-solid fa-address-card text-dark nav-icon"></i><span
+      class="ms-1 d-none d-sm-inline text-dark">Contacts</span></a></li>
+{% if g.user.is_admin %}
+<li class="active_side"></i><a href="/admin/location" class="nav-link px-0 align-middle"><i
+      class="fa-solid fa-location-dot text-dark nav-icon"></i><span class="ms-1 d-none d-sm-inline text-dark">
+      Locations</span></a></li>
+<li><a href="/admin/users" class="nav-link px-0 align-middle"><i class="fa-solid fa-users text-dark nav-icon"></i><span
+      class="ms-1 d-none d-sm-inline text-dark">Users</span></a></li>
+<li><a href="/admin/priority" class="nav-link px-0 align-middle"><i
+      class="fa-solid fa-truck-fast text-dark nav-icon"></i><span class="ms-1 d-none d-sm-inline text-dark">Ticket
+      Priority</span></a></li>
+<li><a href="/admin/ticket_status" class="nav-link px-0 align-middle"><i
+      class="fa-solid fa-circle-check text-dark nav-icon"></i><span class="ms-1 d-none d-sm-inline text-dark">Ticket
+      Status</span></a></li>
+<li><a href="/admin/ticket_type" class="nav-link px-0 align-middle"><i
+      class="fa-regular fa-folder-open text-dark text-dark nav-icon"></i></i><span
+      class="ms-1 d-none d-sm-inline text-dark">Ticket Type</span></a></li>
+<li><a href="/admin/configuration" class="nav-link px-0 align-middle"><i
+      class="fa-solid fa-gears text-dark nav-icon"></i></i><span
+      class="ms-1 d-none d-sm-inline text-dark">Configurations</span></a></li>
+<li><a href="/admin/conf_status" class="nav-link px-0 align-middle"><i
+      class="fa-solid fa-wrench text-dark nav-icon"></i></i><span
+      class="ms-1 d-none d-sm-inline text-dark">Configuration Status</span></a></li>
+{% endif %}
+
 {% endblock %}

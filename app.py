@@ -1,9 +1,13 @@
 import os
+from dotenv import load_dotenv
 from datetime import time, datetime
 
 from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import or_
+from sqlalchemy import or_, desc
+from werkzeug.utils import secure_filename
+# from psycopg2.errorcodes import UNIQUE_VIOLATION
+# from psycopg2 import errors
 
 from forms import UserForm, LoginForm, LocationForm, ContactForm, ConfStatusForm, ConfigurationForm, TicketStatusForm, TicketPriorityForm, TicketTypeForm, TicketForm, TicketActivityForm
 from models import db, connect_db, User, Location, Contact, Conf_status, Configuration, Ticket_status, Ticket_type, Ticket_priority, Ticket, Ticket_activity
@@ -11,8 +15,9 @@ from models import db, connect_db, User, Location, Contact, Conf_status, Configu
 from date_convert import from_time, to_time
 from email_api import send_mail_ticket, send_mail_activity
 
-
 CURR_USER_KEY = "curr_user"
+UPLOAD_FOLDER = os.getenv('IMAGE_ABS_PATH')
+DEFAULT_IMAGE = os.getenv('DEFAULT_IMAGE')
 
 app = Flask(__name__)
 app.debug=True
@@ -26,6 +31,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 connect_db(app)
 with app.app_context():
@@ -33,7 +39,7 @@ with app.app_context():
 
 
 ##############################################################################
-# 404
+# 404 route
 
 @app.errorhandler(404) 
 def not_found(e): 
@@ -69,13 +75,10 @@ def do_logout():
 
 @app.route('/admin/signup', methods=["GET", "POST"])
 def signup():
-    """Handle user signup.
-
+    """
     Create new user and add to DB. Redirect to home page.
-
     If form not valid, present form.
-
-    If the there already is a user with that username: flash message
+    If there already is a user with that username: flash message
     and re-present form.
     """
     if not g.user:
@@ -89,19 +92,33 @@ def signup():
 
     if form.validate_on_submit():
         try:
+            # Checks if image is uploaded - if there is - saves it with the absolute path
+            # but saves relative path to DB
+            file = request.files['image_file']
+            if file:
+                filename = secure_filename(file.filename)
+                file_path = os.getenv('IMAGE_ABS_PATH')+filename
+                file_abs_path = os.getenv('IMAGE_REL_PATH')+filename
+            else:
+                file_abs_path = DEFAULT_IMAGE
+                
             user = User.signup(
                 username=form.username.data,
                 password=form.password.data,
                 first_name = form.first_name.data,
                 last_name = form.last_name.data,
                 email=form.email.data,
-                image_url=form.image_url.data or User.image_url.default.arg,
+                image_url= file_abs_path,
                 is_admin = form.is_admin.data
             )
+            
             db.session.commit()
+            if file:
+                file.save(file_path)
 
         except IntegrityError:
-            flash("Username already taken", 'danger')
+            db.session.rollback()
+            form.username.errors.append("Username already taken!")
             return render_template('users/signup.html', form=form)
 
 
@@ -146,8 +163,7 @@ def logout():
 @app.route('/admin/users')
 def list_users():
     """Page with listing of users.
-
-    Can take a 'q' param in querystring to search by that username.
+    Can take a 'q' param in querystring to search by that username, first or last name.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -159,9 +175,10 @@ def list_users():
     search = request.args.get('q')
 
     if not search:
-        users = User.query.all()
+        users = User.query.order_by(User.username).all()
     else:
-        users = User.query.filter(User.username.ilike(f"%{search}%")).all()
+        users = db.session.query(User).filter(or_(User.first_name.ilike(f"%{search}%"), User.last_name.ilike(f"%{search}%"), 
+                                                  User.username.ilike(f"%{search}%"))).order_by(User.username).all()
 
     return render_template('users/index.html', users=users)
 
@@ -177,8 +194,6 @@ def users_show(user_id):
         return redirect("/")
     
     user = User.query.get_or_404(user_id)
-    # snagging messages in order from the database;
-    # user.messages won't be in order by default
     
     return render_template('users/detail.html', user=user)
 
@@ -200,17 +215,28 @@ def user_edit(user_id):
     form = UserForm(obj=user)
     if form.validate_on_submit():
         try:
+            file = request.files['image_file']
+            if file:
+                filename = secure_filename(file.filename)
+                file_path = os.getenv('IMAGE_ABS_PATH')+filename
+                file_abs_path = os.getenv('IMAGE_REL_PATH')+filename
+            else:
+                file_abs_path = user.image_url
             user.username = form.username.data
             user.email = form.email.data
             user.first_name = form.first_name.data
             user.last_name = form.last_name.data
-            user.image_url = form.image_url.data
+            user.image_url = file_abs_path
             user.is_admin = form.is_admin.data
 
             db.session.commit()
+            if file:
+                file.save(file_path)
+
             return redirect(f'/admin/users/{user.id}')
         except IntegrityError:
-            flash("Username already taken", 'danger')
+            db.session.rollback()
+            form.username.errors.append("Username already taken!")
             return render_template('users/signup.html', form=form)
         
     return render_template("/users/edit.html", form=form)
@@ -239,6 +265,10 @@ def delete_user(user_id):
 
 @app.route('/')
 def homepage():
+    """
+    Redirects to dashboard route if user is logged in.
+    Else to login page
+    """
     if not g.user:
         flash("Login first.", "danger")
         return redirect("/login")
@@ -248,6 +278,7 @@ def homepage():
 
 @app.route('/admin')
 def homepage_docs():
+    """If user is logged in and admin - shows the settings homepage"""
     if not g.user:
         flash("Login first.", "danger")
         return redirect("/login")
@@ -260,7 +291,7 @@ def homepage_docs():
 
 @app.route('/desk')
 def desk_dashboard():
-    """Show desk dashboard"""
+    """Show desk dashboard for logged in users"""
     if not g.user:
         flash("Login first.", "danger")
         return redirect("/")
@@ -272,7 +303,8 @@ def desk_dashboard():
 
 @app.route('/admin/location')
 def locations_list():
-    """Page with listing of locations.
+    """If user is logged in and admin - shows a page with listing of locations.
+    Can take a 'q' param in querystring to search by that name.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -284,16 +316,16 @@ def locations_list():
     search = request.args.get('q')
 
     if not search:
-        locations = Location.query.all()
+        locations = Location.query.order_by(Location.name).all()
     else:
-        locations = Location.query.filter(Location.name.ilike(f"%{search}%")).all()
+        locations = Location.query.filter(Location.name.ilike(f"%{search}%")).order_by(Location.name).all()
 
     return render_template('admin/locations_list.html', locations=locations)
 
 
 @app.route('/admin/location/add', methods=["GET", "POST"])
 def location_add():
-    """List and add new locations
+    """If user is logged in and admin - shows a list and add new locations
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -313,8 +345,9 @@ def location_add():
             db.session.commit()
 
         except IntegrityError:
-            flash("Location with the name already exists!", 'danger')
-            return render_template('admin/locations_list.html', form=form)
+            db.session.rollback()
+            form.name.errors.append("Location with the name already exists!")
+            return render_template('admin/admin_add.html', form=form, config='location')
 
         return redirect("/admin/location")
 
@@ -324,7 +357,7 @@ def location_add():
    
 @app.route('/admin/location/<int:location_id>/edit', methods=["GET", "POST"])
 def location_edit(location_id):
-    """Update profile for current user."""
+    """If user is logged in and admin - shows a page to update a location."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -337,20 +370,21 @@ def location_edit(location_id):
     form = LocationForm(obj=location)
     if form.validate_on_submit():
         try:
-            location.name = form.last_name.data
+            location.name = form.name.data
     
             db.session.commit()
             return redirect('/admin/location')
         except IntegrityError:
-            flash("Email already taken", 'danger')
-            return render_template('/admin/locations_list.html', form=form, config='location')
+            db.session.rollback()
+            form.name.errors.append("Location with the name already exists!")
+            return render_template('/admin/admin_edit.html', form=form, config='location')
         
     return render_template("/admin/admin_edit.html", form=form, config='location')
 
 
 @app.route('/admin/location/<int:location_id>/delete', methods=["POST"])
 def location_delete(location_id):
-    """Delete location."""
+    """If user is logged in and admin - delete locations."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -371,7 +405,8 @@ def location_delete(location_id):
 
 @app.route('/admin/priority')
 def priority_list():
-    """Page with listing of priority for tickets.
+    """If user is logged in and admin - shows a page with listing of priority for tickets.
+    Can take a 'q' param in querystring to search by that name.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -383,16 +418,16 @@ def priority_list():
     search = request.args.get('q')
 
     if not search:
-        priority = Ticket_priority.query.all()
+        priority = Ticket_priority.query.order_by(Ticket_priority.name).all()
     else:
-        priority = Ticket_priority.query.filter(Ticket_priority.name.ilike(f"%{search}%")).all()
+        priority = Ticket_priority.query.filter(Ticket_priority.name.ilike(f"%{search}%")).order_by(Ticket_priority.name).all()
 
     return render_template('admin/priority_list.html', list=priority)
 
 
 @app.route('/admin/priority/add', methods=["GET", "POST"])
 def priority_add():
-    """Add new ticket priority
+    """If user is logged in and admin - shows a page to add a new ticket priority
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -412,8 +447,9 @@ def priority_add():
             db.session.commit()
 
         except IntegrityError:
-            flash("Priority with the name already exists!", 'danger')
-            return render_template('admin/admin_list.html', form=form, config='priority')
+            db.session.rollback()
+            form.name.errors.append("Ticket priority with the name already exists!")
+            return render_template('admin/admin_add.html', form=form, config='priority')
 
         return redirect("/admin/priority")
 
@@ -424,7 +460,7 @@ def priority_add():
 
 @app.route('/admin/priority/<int:priority_id>/edit', methods=["GET", "POST"])
 def priority_edit(priority_id):
-    """Update profile for current user."""
+    """If user is logged in and admin - shows a page to update ticket priority."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -442,15 +478,16 @@ def priority_edit(priority_id):
             db.session.commit()
             return redirect('/admin/priority')
         except IntegrityError:
-            flash("Priority with the name already exists!", 'danger')
-            return render_template('/admin/admin_list.html', form=form, config='priority')
+            db.session.rollback()
+            form.name.errors.append("Ticket priority with the name already exists!")
+            return render_template('/admin/admin_edit.html', form=form, config='priority')
         
     return render_template("/admin/admin_edit.html", form=form, config='priority')
 
 
 @app.route('/admin/priority/<int:priority_id>/delete', methods=["POST"])
 def priority_delete(priority_id):
-    """Delete user."""
+    """If user is logged in and admin - delete ticket priorities."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -471,7 +508,8 @@ def priority_delete(priority_id):
 
 @app.route('/admin/ticket_status')
 def ticket_status_list():
-    """Page with listing of status for configurations.
+    """If user is logged in and admin - shows a page with listing of status for ticket.
+    Can take a 'q' param in querystring to search by that name.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -483,16 +521,16 @@ def ticket_status_list():
     search = request.args.get('q')
 
     if not search:
-        ticket_status = Ticket_status.query.all()
+        ticket_status = Ticket_status.query.order_by(Ticket_status.name).all()
     else:
-        ticket_status = Ticket_status.query.filter(Ticket_status.name.ilike(f"%{search}%")).all()
+        ticket_status = Ticket_status.query.filter(Ticket_status.name.ilike(f"%{search}%")).order_by(Ticket_status.name).all()
 
     return render_template('admin/ticket_status_list.html', list=ticket_status)
 
 
 @app.route('/admin/ticket_status/add', methods=["GET", "POST"])
 def ticket_status_add():
-    """Add new ticket status
+    """If user is logged in and admin - shows a page to add a new ticket status.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -513,8 +551,9 @@ def ticket_status_add():
             db.session.commit()
 
         except IntegrityError:
-            flash("Ticket status with the name already exists!", 'danger')
-            return render_template('admin/admin_list.html', form=form, config='ticket status')
+            db.session.rollback()
+            form.name.errors.append("Ticket status with the name already exists!")
+            return render_template('admin/admin_add.html', form=form, config='ticket status')
 
         return redirect("/admin/ticket_status")
 
@@ -525,7 +564,7 @@ def ticket_status_add():
 
 @app.route('/admin/ticket_status/<int:ticket_status_id>/edit', methods=["GET", "POST"])
 def ticket_status_edit(ticket_status_id):
-    """Update ticket status."""
+    """If user is logged in and admin - shows a page to update ticket status."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -543,15 +582,16 @@ def ticket_status_edit(ticket_status_id):
             db.session.commit()
             return redirect('/admin/ticket_status')
         except IntegrityError:
-            flash("Ticket status with the name already exists!", 'danger')
-            return render_template('/admin/admin_list.html', form=form, config='ticket status')
+            db.session.rollback()
+            form.name.errors.append("Ticket status with the name already exists!")
+            return render_template('/admin/admin_edit.html', form=form, config='ticket status')
         
     return render_template("/admin/admin_edit.html", form=form, config='ticket status')
 
 
 @app.route('/admin/ticket_status/<int:ticket_status_id>/delete', methods=["POST"])
 def ticket_status_delete(ticket_status_id):
-    """Delete ticket status."""
+    """If user is logged in and admin - delete ticket status."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -572,7 +612,8 @@ def ticket_status_delete(ticket_status_id):
 
 @app.route('/admin/ticket_type')
 def ticket_type_list():
-    """Page with listing of type for tickets.
+    """If user is logged in and admin - shows a page with listing of type for tickets.
+    Can take a 'q' param in querystring to search by that name.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -584,16 +625,16 @@ def ticket_type_list():
     search = request.args.get('q')
 
     if not search:
-        ticket_type = Ticket_type.query.all()
+        ticket_type = Ticket_type.query.order_by(Ticket_type.name).all()
     else:
-        ticket_type = Ticket_type.query.filter(Ticket_type.name.ilike(f"%{search}%")).all()
+        ticket_type = Ticket_type.query.filter(Ticket_type.name.ilike(f"%{search}%")).order_by(Ticket_type.name).all()
 
     return render_template('admin/ticket_type_list.html', list=ticket_type)
 
 
 @app.route('/admin/ticket_type/add', methods=["GET", "POST"])
 def ticket_type_add():
-    """Add new ticket type
+    """If user is logged in and admin - shows a page to add new ticket types.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -613,8 +654,9 @@ def ticket_type_add():
             db.session.commit()
 
         except IntegrityError:
-            flash("Ticket type with the name already exists!", 'danger')
-            return render_template('admin/admin_list.html', form=form, config='ticket type')
+            db.session.rollback()
+            form.name.errors.append("Ticket type with the name already exists!")
+            return render_template('admin/admin_add.html', form=form, config='ticket type')
 
         return redirect("/admin/ticket_type")
 
@@ -625,7 +667,7 @@ def ticket_type_add():
 
 @app.route('/admin/ticket_type/<int:ticket_type_id>/edit', methods=["GET", "POST"])
 def ticket_type_edit(ticket_type_id):
-    """Update ticket type."""
+    """If user is logged in and admin - shows a page to update ticket types."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -643,15 +685,16 @@ def ticket_type_edit(ticket_type_id):
             db.session.commit()
             return redirect('/admin/ticket_type')
         except IntegrityError:
-            flash("Ticket type with the name already exists!", 'danger')
-            return render_template('/admin/admin_list.html', form=form, config='ticket type')
+            db.session.rollback()
+            form.name.errors.append("Ticket type with the name already exists!")
+            return render_template('/admin/admin_edit.html', form=form, config='ticket type')
         
     return render_template("/admin/admin_edit.html", form=form, config='ticket type')
 
 
 @app.route('/admin/ticket_type/<int:ticket_type_id>/delete', methods=["POST"])
 def ticket_type_delete(ticket_type_id):
-    """Delete ticket type."""
+    """If user is logged in and admin - delete ticket type."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -671,7 +714,8 @@ def ticket_type_delete(ticket_type_id):
 
 @app.route('/admin/conf_status')
 def conf_status_list():
-    """Page with listing of status for configurations.
+    """If user is logged in and admin - shows a page with listing of status for configurations.
+    Can take a 'q' param in querystring to search by that name.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -683,16 +727,16 @@ def conf_status_list():
     search = request.args.get('q')
 
     if not search:
-        conf_status = Conf_status.query.all()
+        conf_status = Conf_status.query.order_by(Conf_status.name).all()
     else:
-        conf_status = Conf_status.query.filter(Conf_status.name.ilike(f"%{search}%")).all()
+        conf_status = Conf_status.query.filter(Conf_status.name.ilike(f"%{search}%")).order_by(Conf_status.name).all()
 
     return render_template('admin/conf_status_list.html', list=conf_status)
 
 
 @app.route('/admin/conf_status/add', methods=["GET", "POST"])
 def conf_status_add():
-    """Add new config status
+    """If user is logged in and admin - shows a page to add new config status.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -712,8 +756,9 @@ def conf_status_add():
             db.session.commit()
 
         except IntegrityError:
-            flash("Configuration status with the name already exists!", 'danger')
-            return render_template('admin/conf_status_list.html', form=form)
+            db.session.rollback()
+            form.name.errors.append("Configuration status with the name already exists!")
+            return render_template('admin/admin_add.html', form=form, config="configuration status")
 
         return redirect("/admin/conf_status")
 
@@ -724,7 +769,7 @@ def conf_status_add():
 
 @app.route('/admin/conf_status/<int:conf_status_id>/edit', methods=["GET", "POST"])
 def conf_status_edit(conf_status_id):
-    """Update configuration status."""
+    """If user is logged in and admin - shows a page to update configuration status."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -742,15 +787,16 @@ def conf_status_edit(conf_status_id):
             db.session.commit()
             return redirect('/admin/conf_status')
         except IntegrityError:
-            flash("Configuration status with the name already exists!", 'danger')
-            return render_template('/admin/conf_status_list.html', form=form)
+            db.session.rollback()
+            form.name.errors.append("Configuration status with the name already exists!")
+            return render_template('/admin/admin_edit.html', form=form, config='configuration status')
         
     return render_template("/admin/admin_edit.html", form=form, config='configuration status')
 
 
 @app.route('/admin/conf_status/<int:conf_status_id>/delete', methods=["POST"])
 def conf_status_delete(conf_status_id):
-    """Delete configuration status."""
+    """If user is logged in and admin - delete configuration status."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -771,7 +817,8 @@ def conf_status_delete(conf_status_id):
 
 @app.route('/admin/configuration')
 def configurations_list():
-    """Page with listing of configurations.
+    """If user is logged in and admin - shows a page with listing of configurations.
+    Can take a 'q' param in querystring to search by that name.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -783,16 +830,16 @@ def configurations_list():
     search = request.args.get('q')
 
     if not search:
-        configurations = Configuration.query.all()
+        configurations = Configuration.query.order_by(Configuration.name).all()
     else:
-        configurations = Configuration.query.filter(Configuration.name.ilike(f"%{search}%")).all()
+        configurations = Configuration.query.filter(Configuration.name.ilike(f"%{search}%")).order_by(Configuration.name).all()
 
     return render_template('admin/configurations_list.html', list=configurations)
 
 
 @app.route('/admin/configuration/add', methods=["GET", "POST"])
 def configurations_add():
-    """Add new configuration
+    """If user is logged in and admin - shows a page to add new configurations.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -802,22 +849,22 @@ def configurations_add():
         return redirect("/")
     
     form = ConfigurationForm()
-
-    contact_choices = (db.session.query(Contact.id, Contact.first_name).all())
-    form.contact_id.choices = [(x.id, x.first_name) for x in contact_choices]
-    location_choices = (db.session.query(Location.id, Location.name).all())
-    form.location_id.choices = [(x.id, x.name) for x in location_choices]
-    status_choices = (db.session.query(Conf_status.id, Conf_status.name).all())
-    form.status_id.choices = [(x.id, x.name) for x in status_choices]
+    # Generate choices for select fields. The blank choice is added as the top choice option, and is validated later
+    blank_choices = [(0, '')]
+    form.contact_id.choices = blank_choices + [(x.id, x.last_name) for x in db.session.query(Contact.id, Contact.last_name).all()]
+    form.location_id.choices = blank_choices + [(x.id, x.name) for x in db.session.query(Location.id, Location.name).all()]
+    form.status_id.choices = [(x.id, x.name) for x in db.session.query(Conf_status.id, Conf_status.name).all()]
 
     if form.validate_on_submit():
         try:
+            contact_id = form.contact_id.data if form.contact_id.data != 0 else None
+            location_id = form.location_id.data if form.location_id.data != 0 else None
             configurations = Configuration(
                 name=form.name.data,
                 notes=form.notes.data,
                 model=form.model.data,
-                contact_id=form.contact_id.data,
-                location_id=form.location_id.data,
+                contact_id=contact_id,
+                location_id=location_id,
                 status_id=form.status_id.data
             )
 
@@ -825,8 +872,9 @@ def configurations_add():
             db.session.commit()
 
         except IntegrityError:
-            flash("Configuration with the name already exists!", 'danger')
-            return render_template('admin/configurations_list.html', form=form)
+            db.session.rollback()
+            form.name.errors.append("Configuration with the name already exists!")
+            return render_template('admin/admin_add.html', form=form, config='configuration')
 
         return redirect("/admin/configuration")
 
@@ -837,7 +885,7 @@ def configurations_add():
 
 @app.route('/admin/configuration/<int:configuration_id>/edit', methods=["GET", "POST"])
 def configuration_edit(configuration_id):
-    """Update configurations."""
+    """If user is logged in and admin - shows a page to update configurations."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -848,34 +896,38 @@ def configuration_edit(configuration_id):
     
     configuration = Configuration.query.get_or_404(configuration_id)
     form = ConfigurationForm(obj=configuration)
-    contact_choices = (db.session.query(Contact.id, Contact.first_name).all())
-    form.contact_id.choices = [(x.id, x.first_name) for x in contact_choices]
-    location_choices = (db.session.query(Location.id, Location.name).all())
-    form.location_id.choices = [(x.id, x.name) for x in location_choices]
-    status_choices = (db.session.query(Conf_status.id, Conf_status.name).all())
-    form.status_id.choices = [(x.id, x.name) for x in status_choices]
+
+    # Generates choices for select inputs. The blank_choices option is always on top and later validated
+    blank_choices = [(0, '')]
+    form.contact_id.choices = blank_choices + [(x.id, x.last_name) for x in db.session.query(Contact.id, Contact.last_name).all()]
+    form.location_id.choices = blank_choices + [(x.id, x.name) for x in db.session.query(Location.id, Location.name).all()]
+    form.status_id.choices = [(x.id, x.name) for x in db.session.query(Conf_status.id, Conf_status.name).all()]
+
 
     if form.validate_on_submit():
         try:
+            contact_id = form.contact_id.data if form.contact_id.data != 0 else None
+            location_id = form.location_id.data if form.location_id.data != 0 else None
             configuration.name = form.name.data
             configuration.notes = form.notes.data
             configuration.model = form.model.data
             configuration.status_id = form.status_id.data
-            configuration.location_id = form.location_id.data
-            configuration.contact_id = form.contact_id.data
+            configuration.location_id = location_id
+            configuration.contact_id = contact_id
             
             db.session.commit()
             return redirect('/admin/configuration')
         except IntegrityError:
-            flash("Configuration with the name already exists!", 'danger')
-            return render_template('/admin/configurations_list.html', form=form)
+            db.session.rollback()
+            form.name.errors.append("Configuration with the name already exists!")
+            return render_template('/admin/admin_edit.html', form=form, config='configuration')
         
     return render_template("/admin/admin_edit.html", form=form, config='configuration')
 
 
 @app.route('/admin/configuration/<int:configuration_id>/delete', methods=["POST"])
 def configuration_delete(configuration_id):
-    """Delete configuration."""
+    """If user is logged in and admin - delete configuration."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -895,7 +947,8 @@ def configuration_delete(configuration_id):
 
 @app.route('/admin/contact')
 def contact_list():
-    """Page with listing of contacts.
+    """If user is logged in /admin not required/ shows a page with listing of contacts.
+    Can take a 'q' param in querystring to search by that first or last name, and email address.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -904,16 +957,17 @@ def contact_list():
     search = request.args.get('q')
 
     if not search:
-        contacts = Contact.query.all()
+        contacts = Contact.query.order_by(Contact.last_name).all()
     else:
-        contacts = db.session.query(Contact).filter(or_(Contact.first_name.ilike(f"%{search}%"), Contact.last_name.ilike(f"%{search}%"), Contact.email.ilike(f"%{search}%"))).all()
+        contacts = db.session.query(Contact).filter(or_(Contact.first_name.ilike(f"%{search}%"), Contact.last_name.ilike(f"%{search}%"), 
+                                                        Contact.email.ilike(f"%{search}%"))).order_by(Contact.last_name).all()
 
     return render_template('admin/contacts_list.html', list=contacts)
 
 
 @app.route('/admin/contact/add', methods=["GET", "POST"])
 def contacts_add():
-    """Add new contacts
+    """If user is logged in /admin not required/ shows a page to add new contacts.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -932,8 +986,9 @@ def contacts_add():
             db.session.commit()
 
         except IntegrityError:
-            flash("Contact with the email already exists!", 'danger')
-            return render_template('admin/admin_list.html', form=form, config='contact')
+            db.session.rollback()
+            form.email.errors.append("Contact with the email address already exists!")
+            return render_template('admin/admin_add.html', form=form, config='contact')
 
         return redirect("/admin/contact")
 
@@ -944,7 +999,7 @@ def contacts_add():
 
 @app.route('/admin/contact/<int:contact_id>/edit', methods=["GET", "POST"])
 def contact_edit(contact_id):
-    """Update profile for current user."""
+    """If user is logged in /admin not required/ shows a page to update a contact entry."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -961,8 +1016,9 @@ def contact_edit(contact_id):
             db.session.commit()
             return redirect('/admin/contact')
         except IntegrityError:
-            flash("Email already taken", 'danger')
-            return render_template('/admin/contacts_list.html', form=form, config='contact')
+            db.session.rollback()
+            form.email.errors.append("Contact with the email address already exists!")
+            return render_template('/admin/admin_edit.html', form=form, config='contact')
         
     return render_template("/admin/admin_edit.html", form=form, config='contact')
 
@@ -970,7 +1026,7 @@ def contact_edit(contact_id):
 @app.route('/admin/contact/<int:contact_id>/delete', methods=["POST"])
 
 def delete_contact(contact_id):
-    """Delete user."""
+    """If user is logged in /admin not required/ - delete user."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -991,7 +1047,8 @@ def delete_contact(contact_id):
 
 @app.route('/desk/ticket')
 def tickets_list():
-    """Page with listing of tickets.
+    """If user is logged in /admin not required/ shows a page with listing of tickets.
+    Can take a 'from' and 'to' param in query string to search by that time period.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -1003,9 +1060,9 @@ def tickets_list():
     if search_from and search_to:
         fromdatetime = from_time(search_from)
         todatetime = to_time(search_to)
-        tickets = db.session.query(Ticket).filter((Ticket.timestamp.between(fromdatetime, todatetime))).all()
+        tickets = db.session.query(Ticket).filter((Ticket.timestamp.between(fromdatetime, todatetime))).order_by(desc(Ticket.timestamp)).all()
     else:
-        tickets = Ticket.query.all()
+        tickets = Ticket.query.order_by(desc(Ticket.timestamp)).all()
        
 
     return render_template('/desk/tickets_list.html', list=tickets)
@@ -1013,7 +1070,7 @@ def tickets_list():
 
 @app.route('/desk/my_ticket')
 def my_tickets_list():
-    """Page with listing of logged in user's tickets.
+    """If user is logged in /admin not required/ shows a page with listing of the logged in user's tickets.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -1025,9 +1082,9 @@ def my_tickets_list():
     if search_from and search_to:
         fromdatetime = from_time(search_from)
         todatetime = to_time(search_to)
-        tickets = db.session.query(Ticket).filter_by(user_id=g.user.id).filter((Ticket.timestamp.between(fromdatetime, todatetime))).all()
+        tickets = db.session.query(Ticket).filter_by(user_id=g.user.id).filter((Ticket.timestamp.between(fromdatetime, todatetime))).order_by(desc(Ticket.timestamp)).all()
     else:
-        tickets = Ticket.query.filter_by(user_id=g.user.id).all()
+        tickets = Ticket.query.filter_by(user_id=g.user.id).order_by(desc(Ticket.timestamp)).all()
 
 
     return render_template('/desk/tickets_list_my.html', list=tickets)
@@ -1035,7 +1092,7 @@ def my_tickets_list():
 
 @app.route('/desk/ticket/add', methods=["GET", "POST"])
 def ticket_add():
-    """Add new ticket
+    """If user is logged in /admin not required/ shows a page to add new tickets.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -1043,21 +1100,19 @@ def ticket_add():
 
     
     form = TicketForm()
-
-    contact_choices = (db.session.query(Contact.id, Contact.first_name).all())
-    form.contact_id.choices = [(x.id, x.first_name) for x in contact_choices]
-    user_choices = (db.session.query(User.id, User.first_name).all())
-    form.user_id.choices = [(x.id, x.first_name) for x in user_choices]
-    status_choices = (db.session.query(Ticket_status.id, Ticket_status.name).all())
-    form.status_id.choices = [(x.id, x.name) for x in status_choices]
-    priority_choices = (db.session.query(Ticket_priority.id, Ticket_priority.name).all())
-    form.priority_id.choices = [(x.id, x.name) for x in priority_choices]
-    type_choices = (db.session.query(Ticket_type.id, Ticket_type.name).all())
-    form.type_id.choices = [(x.id, x.name) for x in type_choices]
-    conf_choices = (db.session.query(Configuration.id, Configuration.name).all())
-    form.configuration_id.choices = [(x.id, x.name) for x in conf_choices]
+    # Generate choices for select input options - the blank choices are on top and validated when submitted for requried fields.
+    blank_choices = [(0, '')]
+    form.contact_id.choices = [(x.id, x.last_name) for x in db.session.query(Contact.id, Contact.last_name).all()]
+    form.user_id.choices = blank_choices + [(x.id, x.last_name) for x in db.session.query(User.id, User.last_name).all()]
+    form.configuration_id.choices = blank_choices + [(x.id, x.name) for x in db.session.query(Configuration.id, Configuration.name).all()]
+    form.status_id.choices = [(x.id, x.name) for x in db.session.query(Ticket_status.id, Ticket_status.name).all()]
+    form.priority_id.choices = [(x.id, x.name) for x in db.session.query(Ticket_priority.id, Ticket_priority.name).all()]
+    form.type_id.choices = [(x.id, x.name) for x in db.session.query(Ticket_type.id, Ticket_type.name).all()]
+    
 
     if form.validate_on_submit():
+        user_id = form.user_id.data if form.user_id.data != 0 else None
+        configuration_id = form.configuration_id.data if form.configuration_id.data != 0 else None
         ticket = Ticket(
             title=form.title.data,
             notes=form.notes.data,
@@ -1065,8 +1120,8 @@ def ticket_add():
             priority_id=form.priority_id.data,
             type_id=form.type_id.data,
             contact_id=form.contact_id.data,
-            user_id=form.user_id.data,
-            configuration_id=form.configuration_id.data
+            user_id=user_id,
+            configuration_id=configuration_id
         )
 
         db.session.add(ticket)
@@ -1092,7 +1147,7 @@ def ticket_add():
 
 @app.route('/desk/ticket/<int:ticket_id>')
 def ticket_view(ticket_id):
-    """View ticket details"""
+    """If user is logged in /admin not required/ shows a page to view ticket details"""
     if not g.user:
         flash("Login first.", "danger")
         return redirect("/login")
@@ -1103,7 +1158,7 @@ def ticket_view(ticket_id):
                            
 @app.route('/desk/ticket/<int:ticket_id>/edit', methods=["GET", "POST"])
 def ticket_edit(ticket_id):
-    """Update ticket."""
+    """If user is logged in /admin not required/ shows a page to update a ticket."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -1112,35 +1167,33 @@ def ticket_edit(ticket_id):
     
     ticket = Ticket.query.get_or_404(ticket_id)
     form = TicketForm(obj=ticket)
-    
-    contact_choices = (db.session.query(Contact.id, Contact.first_name).all())
-    form.contact_id.choices = [(x.id, x.first_name) for x in contact_choices]
-    user_choices = (db.session.query(User.id, User.first_name).all())
-    form.user_id.choices = [(x.id, x.first_name) for x in user_choices]
-    status_choices = (db.session.query(Ticket_status.id, Ticket_status.name).all())
-    form.status_id.choices = [(x.id, x.name) for x in status_choices]
-    priority_choices = (db.session.query(Ticket_priority.id, Ticket_priority.name).all())
-    form.priority_id.choices = [(x.id, x.name) for x in priority_choices]
-    type_choices = (db.session.query(Ticket_type.id, Ticket_type.name).all())
-    form.type_id.choices = [(x.id, x.name) for x in type_choices]
-    conf_choices = (db.session.query(Configuration.id, Configuration.name).all())
-    form.configuration_id.choices = [(x.id, x.name) for x in conf_choices]
+    #Generate select field option choices with a blank option
+    blank_choices = [(0, '')]
+    form.contact_id.choices = [(x.id, x.last_name) for x in db.session.query(Contact.id, Contact.last_name).all()]
+    form.user_id.choices = blank_choices + [(x.id, x.last_name) for x in db.session.query(User.id, User.last_name).all()]
+    form.configuration_id.choices = blank_choices + [(x.id, x.name) for x in db.session.query(Configuration.id, Configuration.name).all()]
+    form.status_id.choices = [(x.id, x.name) for x in db.session.query(Ticket_status.id, Ticket_status.name).all()]
+    form.priority_id.choices = [(x.id, x.name) for x in db.session.query(Ticket_priority.id, Ticket_priority.name).all()]
+    form.type_id.choices = [(x.id, x.name) for x in db.session.query(Ticket_type.id, Ticket_type.name).all()]
 
     if form.validate_on_submit():
+        user_id = form.user_id.data if form.user_id.data != 0 else None
+        configuration_id = form.configuration_id.data if form.configuration_id.data != 0 else None
         ticket.title=form.title.data,
         ticket.notes=form.notes.data,
         ticket.status_id=form.status_id.data,
         ticket.priority_id=form.priority_id.data,
         ticket.type_id=form.type_id.data,
         ticket.contact_id=form.contact_id.data,
-        ticket.user_id=form.user_id.data,
-        ticket.configuration_id=form.configuration_id.data
+        ticket.user_id=user_id,
+        ticket.configuration_id=configuration_id
         db.session.commit()
 
         #Send email to assignee and contact
         send_code = send_mail_ticket(ticket)
         
         if send_code == 200:
+            ticket.notification_sent = True
             msg="info"
         else:
             ticket.notification_sent = False
@@ -1155,7 +1208,7 @@ def ticket_edit(ticket_id):
 
 @app.route('/desk/ticket/<int:ticket_id>/delete', methods=["POST"])
 def ticket_delete(ticket_id):
-    """Delete ticket."""
+    """If user is logged in /admin not required/ - delete ticket."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -1173,6 +1226,7 @@ def ticket_delete(ticket_id):
 
 @app.route('/desk/resend/<int:ticket_id>')
 def resend_notification(ticket_id):
+    """Shows an option to resend failed notifications"""
     ticket = Ticket.query.get_or_404(ticket_id)
     send_code = send_mail_ticket(ticket)
         
@@ -1193,7 +1247,7 @@ def resend_notification(ticket_id):
 
 @app.route('/desk/ticket/<int:ticket_id>/add-activity', methods=["GET", "POST"])
 def ticket_activity_add(ticket_id):
-    """Add new ticket activity
+    """If user is logged in /admin not required/ shows a page to add new ticket activity.
     """
     if not g.user:
         flash("Login first.", "danger")
@@ -1202,10 +1256,8 @@ def ticket_activity_add(ticket_id):
     
     form = TicketActivityForm()
 
-    user_choices = (db.session.query(User.id, User.first_name).all())
-    form.user_id.choices = [(x.id, x.first_name) for x in user_choices]
+    form.user_id.choices = [(x.id, x.last_name) for x in db.session.query(User.id, User.last_name).all()]
     
-
     if form.validate_on_submit():
         ticket_activity = Ticket_activity(
             notes=form.notes.data,
@@ -1236,14 +1288,14 @@ def ticket_activity_add(ticket_id):
 
 @app.route('/desk/ticket_activity/<int:activity_id>/edit', methods=["GET", "POST"])
 def ticket_activity_edit(activity_id):
-    """Edit ticket activity
+    """If user is logged in /admin not required/ shows a page to edit ticket activity.
     """
     if not g.user:
         flash("Login first.", "danger")
         return redirect("/login")
 
-    
-    form = TicketActivityForm()
+    activity = Ticket_activity.query.get_or_404(activity_id)
+    form = TicketActivityForm(obj=activity)
 
     user_choices = (db.session.query(User.id, User.first_name).all())
     form.user_id.choices = [(x.id, x.first_name) for x in user_choices]
@@ -1261,6 +1313,7 @@ def ticket_activity_edit(activity_id):
         send_code = send_mail_activity(ticket_activity)
         
         if send_code == 200:
+            ticket_activity.notification_sent = True
             msg="info"
         else:
             ticket_activity.notification_sent = False
@@ -1276,7 +1329,7 @@ def ticket_activity_edit(activity_id):
 
 @app.route('/desk/ticket_activity/<int:activity_id>/delete', methods=["POST"])
 def ticket_activity_delete(activity_id):
-    """Delete ticket."""
+    """If user is logged in /admin not required/ shows a page to delete ticket activity."""
 
     if not g.user:
         flash("Login first.", "danger")
@@ -1294,11 +1347,13 @@ def ticket_activity_delete(activity_id):
 
 @app.route('/desk/resend-activity/<int:activity_id>')
 def resend_activity_notification(activity_id):
+    "Shows an option to resend ticket activity notification if failed"
     activity = Ticket_activity.query.get_or_404(activity_id)
     send_code = send_mail_activity(activity)
         
     if send_code == 200:
         msg="info"
+        activity.notification_sent = True
     else:
         activity.notification_sent = False
         db.session.commit()
@@ -1311,15 +1366,21 @@ def resend_activity_notification(activity_id):
 # Get chart statistics routes
 @app.route('/desk/stats')
 def ticket_stats():
-    """Get open/closed tickets by user to plot the chart"""
+    """Get ticket stats for tickets YTD to plot the dashbaord charts.
+    If admin - returns all tickets. If not admin user is logged in - returns only the user's tickets.
+    Returns the list of tickets in JSON for the chart.js file."""
     if not g.user:
         flash("Login first.", "danger")
         return redirect("/login")
+    
+    first_current = datetime.replace(datetime.now(), month=1, day=1)
+    ytd = datetime.combine(first_current, time.min)
+
     if g.user.is_admin:
-        first_current = datetime.replace(datetime.now(), month=1, day=1)
-        ytd = datetime.combine(first_current, time.min)
-
         tickets = Ticket.query.filter(Ticket.timestamp <= datetime.now()).filter(Ticket.timestamp >= ytd).all()
+    else:
+        tickets = Ticket.query.filter(Ticket.user_id == g.user.id).filter(Ticket.timestamp <= datetime.now()).filter(Ticket.timestamp >= ytd).all()
 
-        data = [ticket.serialize() for ticket in tickets]
-        return jsonify(data)
+    data = [ticket.serialize() for ticket in tickets]
+        
+    return jsonify(data)

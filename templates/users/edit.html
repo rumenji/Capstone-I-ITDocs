@@ -1,29 +1,32 @@
+<!-- User edit form -->
 {% extends 'baseadmin.html' %}
 
-{% block admincontent %}
+{% block content %}
 
-  <div class="row justify-content-md-center">
-    <div class="col-md-4">
-      <h2 class="join-message">Edit User:</h2>
-      <form method="POST" id="user_form">
-        {{ form.hidden_tag() }}
+<div class="row">
+  <div class="col-md-9 col-lg-6">
+    <h2 class="join-message">Edit User:</h2>
+    <form method="POST" id="user_form" enctype="multipart/form-data">
+      {{ form.hidden_tag() }}
 
-        {% for field in form if field.widget.input_type != 'hidden' and field.name != 'password' %}
-        <div class="form-group">
-          {% for error in field.errors %}
-            <span class="text-danger">{{ error }}</span>
-          {% endfor %}
-          {{field.label(class="col-sm-2 col-form-label")}}
+      {% for field in form if field.widget.input_type != 'hidden' and field.name != 'password' %}
+      <div class="form-group row">
+        {% for error in field.errors %}
+        <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+        {{field.label(class="col-sm-2 col-form-label")}}
+        <div class="col-sm-8">
           {{ field(placeholder=field.label.text, class="form-control") }}
         </div>
-        {% endfor %}
+      </div>
+      {% endfor %}
 
-        <div class="edit-btn-area">
-          <button class="btn btn-success">Edit this user!</button>
-          <a href="/users/{{ user_id }}" class="btn btn-outline-secondary">Cancel</a>
-        </div>
-      </form>
-    </div>
+      <div class="edit-btn-area">
+        <button class="btn btn-success">Edit this user!</button>
+        <a href="/admin/users/{{ user_id }}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
   </div>
+</div>
 
 {% endblock %}

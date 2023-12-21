@@ -1,17 +1,16 @@
 {% extends 'basedesk.html' %}
 
-{% block deskcontent %}
-
-<div class="row justify-content-md-center">
-  <div class="col-md-7 col-lg-5">
+{% block content %}
+<!-- Edit ticket form -->
+<div class="row">
+  <div class="col-md-9 col-lg-6">
     <h2 class="join-message">Edit ticket:</h2>
     <form method="POST">
-      {% include "desk/_ticket_form.html" %}
-
-      <button class="btn btn-primary btn-lg btn-block">Edit ticket</button>
+      <!-- Uses the general form template -->
+      {% include "admin/_admin_form.html" %}
+      <button class="btn btn-info btn-sm">Edit ticket</button>
+      <a href="/desk/ticket" class="btn btn-sm btn-outline-secondary">Cancel</a>
     </form>
-  
   </div>
 </div>
-
 {% endblock %}
