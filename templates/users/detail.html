@@ -1,17 +1,35 @@
+<!-- User details page -->
 {% extends 'baseadmin.html' %}
 
-{% block admincontent %}
-<h3>Details for {{user.username}}</h3>
-<img src="{{ user.image_url }}" alt="{{ user.username }}" width="100" height="100">
-<p>Username: {{user.username}}</p>
-<p>First name: {{user.first_name}}</p>
-<p>Last name: {{user.last_name}}</p>
-<p>Email address: {{user.email}}</p>
-<p>Has Admin Permissions: {% if user.is_admin %} Yes {% else %} No {% endif %}</p>
-<div class="ml-auto">
-<a href="/admin/users/{{user.id}}/edit" class="btn btn-outline-secondary">Edit User</a>
-            <form method="POST" action="/admin/users/{{user.id}}/delete" class="form-inline">
-              <button class="btn btn-outline-danger ml-2">Delete User</button>
-            </form>
+{% block content %}
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header">
+      <h6 class="m-0 font-weight-bold">Details for {{user.username}}</h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-2">
+          <img src="{{ user.image_url }}" alt="{{ user.username }}" width="100" height="100">
+        </div>
+        <div class="col">
+          <p class="font-weight-bold"><span class="font-weight-light">Username:</span> {{user.username}}</p>
+          <p class="font-weight-bold"><span class="font-weight-light">First name:</span> {{user.first_name}}</p>
+          <p class="font-weight-bold"><span class="font-weight-light">Last name:</span> {{user.last_name}}</p>
+          <p class="font-weight-bold"><span class="font-weight-light">Email address:</span> {{user.email}}</p>
+          <p class="font-weight-bold"><span class="font-weight-light">Has Admin Permissions:</span> {% if user.is_admin
+            %} Yes {% else %} No {% endif %}</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer text-body-secondary">
+      <div class="row">
+        <form method="POST" action="/admin/users/{{user.id}}/delete" class="form-inline">
+          <button type="submit" formaction="/admin/users/{{user.id}}/edit" class="btn btn-sm btn-info">Edit</button>
+          <button class="btn btn-sm btn-danger">Delete User</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

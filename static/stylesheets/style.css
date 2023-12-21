@@ -1,3 +1,4 @@
+/* Used to override some Bootstrap styling options */
 .active-side {
     font-weight: bold;
 }
@@ -22,3 +23,11 @@
     height: 400px;
     width: 100%;
   }
+
+.nav-icon {
+    margin-right: 5px;
+}
+
+#side-navigation{
+    font-size: large;
+}

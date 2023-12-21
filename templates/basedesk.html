@@ -1,36 +1,25 @@
-{% include 'base.html' %}
-{% block content %}
-<!-- Side bar navigation -->
-<div class="container-fluid">
-    <div class="row flex-nowrap">
-        <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-light">
-            <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100">
-                <a href="/docs" class="d-flex align-items-center pb-3 mb-3 link-dark text-decoration-none border-bottom">
-                    <svg class="bi me-2" width="30" height="24"><use xlink:href="#bootstrap"></use></svg>
-                    <span class="fs-5 fw-semibold"></span>
-                </a>
-                <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="side-navigation">
-                    <li>
-                        <a href="/desk/my_ticket" class="nav-link px-0 align-middle">
-                            <i class="fs-4 bi-table"></i> <span class="ms-1 d-none d-sm-inline text-dark">My Tickets</span></a>
-                    </li>
-                    <li>
-                        <a href="/desk/ticket" class="nav-link px-0 align-middle">
-                            <i class="fs-4 bi-table"></i> <span class="ms-1 d-none d-sm-inline text-dark">Tickets</span></a>
-                    </li>
-                    <li>
-                        <a href="/admin/contact" class="nav-link px-0 align-middle">
-                          <i class="fs-4 bi-table"></i> <span class="ms-1 d-none d-sm-inline text-dark">Contacts</span></a>
-                    </li>
-                </ul>
-                <hr>
-            </div>
-        </div>
-        <div class="col py-3 border-left">
-            {% block deskcontent %}
-            {% endblock %}
-        </div>
-    </div>
-</div>
+{% extends 'base.html' %}
+{% block sidebar %}
+<!-- Side bar navigation for service desk templates. Extends the base.html -->
+<li>
+    <a href="/desk" class="nav-link px-0 align-middle">
+        <i class="fa-solid fa-chart-line text-dark nav-icon"></i><span
+            class="ms-1 d-none d-sm-inline text-dark">Dashboard</span></a>
+</li>
+<li>
+    <a href="/desk/my_ticket" class="nav-link px-0 align-middle">
+        <i class="fa-solid fa-clipboard-list text-dark nav-icon"></i><span class="ms-1 d-none d-sm-inline text-dark">My
+            Tickets</span></a>
+</li>
+<li>
+    <a href="/desk/ticket" class="nav-link px-0 align-middle">
+        <i class="fa-solid fa-ticket text-dark nav-icon"></i><span
+            class="ms-1 d-none d-sm-inline text-dark">Tickets</span></a>
+</li>
+<li>
+    <a href="/admin/contact" class="nav-link px-0 align-middle">
+        <i class="fa-solid fa-address-card text-dark nav-icon"></i><span
+            class="ms-1 d-none d-sm-inline text-dark">Contacts</span></a>
+</li>
 
 {% endblock %}
