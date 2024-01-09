@@ -64,7 +64,7 @@ The app also has metrics that will be displayed on the dashboard homepage.
 
 ### Live Demo
 
-- [Live Demo](https://capstone1-xcuk.onrender.com)
+- [Live Demo](https://itdocs.onrender.com)
 
 ### Author
 
