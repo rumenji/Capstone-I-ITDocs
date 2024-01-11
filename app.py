@@ -1232,13 +1232,15 @@ def resend_notification(ticket_id):
     send_code = send_mail_ticket(ticket)
         
     if send_code == 200:
-
+        ticket.notification_sent = True
+        db.session.commit()
         msg="info"
+        flash(f"Email was sent successfully.", msg)
     else:
         ticket.notification_sent = False
         db.session.commit()
         msg="warning"
-    flash(f"Email was sent with code: {send_code}", msg)
+        flash(f"Error sending email", msg)
 
     return redirect(f'/desk/ticket/{ticket.id}')
 
