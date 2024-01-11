@@ -6,8 +6,6 @@ from flask import Flask, render_template, request, flash, redirect, session, g, 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_, desc
 from werkzeug.utils import secure_filename
-# from psycopg2.errorcodes import UNIQUE_VIOLATION
-# from psycopg2 import errors
 
 from forms import UserForm, LoginForm, LocationForm, ContactForm, ConfStatusForm, ConfigurationForm, TicketStatusForm, TicketPriorityForm, TicketTypeForm, TicketForm, TicketActivityForm
 from models import db, connect_db, User, Location, Contact, Conf_status, Configuration, Ticket_status, Ticket_type, Ticket_priority, Ticket, Ticket_activity
@@ -1133,11 +1131,12 @@ def ticket_add():
         
         if send_code == 200:
             msg="info"
+            flash(f"Email was sent successfully", msg)
         else:
             ticket.notification_sent = False
             db.session.commit()
             msg="warning"
-        flash(f"Email was sent with code: {send_code}", msg)
+            flash(f"There was an error sending the email! Please resend", msg)
 
         return redirect(f"/desk/ticket/{ticket.id}")
 
@@ -1194,12 +1193,14 @@ def ticket_edit(ticket_id):
         
         if send_code == 200:
             ticket.notification_sent = True
+            db.session.commit()
             msg="info"
+            flash(f"Email was sent successfully", msg)
         else:
             ticket.notification_sent = False
             db.session.commit()
             msg="warning"
-        flash(f"Email was sent with code: {send_code}", msg)
+            flash(f"There was an error sending the email! Please resend", msg)
 
         return redirect(f'/desk/ticket/{ticket.id}')
     
@@ -1231,6 +1232,7 @@ def resend_notification(ticket_id):
     send_code = send_mail_ticket(ticket)
         
     if send_code == 200:
+
         msg="info"
     else:
         ticket.notification_sent = False
@@ -1274,11 +1276,13 @@ def ticket_activity_add(ticket_id):
         
         if send_code == 200:
             msg="info"
+            flash(f"Email sent successfully.", msg)
         else:
             ticket_activity.notification_sent = False
             db.session.commit()
             msg="warning"
-        flash(f"Email was sent with code: {send_code}", msg)
+            flash(f"There was an error sending the email! Please resend", msg)
+
 
         return redirect(f"/desk/ticket/{ticket_id}")
 
@@ -1314,12 +1318,15 @@ def ticket_activity_edit(activity_id):
         
         if send_code == 200:
             ticket_activity.notification_sent = True
+            db.session.commit()
             msg="info"
+            flash(f"Email sent successfully.", msg)
         else:
             ticket_activity.notification_sent = False
             db.session.commit()
             msg="warning"
-        flash(f"Email was sent with code: {send_code}", msg)
+            flash(f"There was an error sending the email! Please resend", msg)
+
 
         return redirect(f"/desk/ticket/{ticket_activity.ticket.id}")
 
@@ -1354,11 +1361,13 @@ def resend_activity_notification(activity_id):
     if send_code == 200:
         msg="info"
         activity.notification_sent = True
+        db.session.commit()
+        flash(f"Email sent successfully.", msg)
     else:
         activity.notification_sent = False
         db.session.commit()
         msg="warning"
-    flash(f"Email was sent with code: {send_code}", msg)
+        flash(f"There was an error sending the email! Please resend", msg)
 
     return redirect(f'/desk/ticket/{activity.ticket.id}')
 

@@ -47,6 +47,7 @@ The app also has metrics that will be displayed on the dashboard homepage.
 3. Locations
 4. Ticket types, priorities, statuses
 5. Configuration statuses and configurations
+- Standard users can add tickets and activites, as well as add contacts.
 - Dashboard with metrics - provides statistics for:
 1. Tickets logged today, MTD, YTD, open tickets
 2. Line chart for tickets per month YTD
@@ -64,7 +65,9 @@ The app also has metrics that will be displayed on the dashboard homepage.
 
 ### Live Demo
 
-- [Live Demo](https://capstone1-xcuk.onrender.com)
+- [Live Demo](https://itdocs.onrender.com)
+Demo username: admin
+Demo password: Testtest!
 
 ### Author
 
